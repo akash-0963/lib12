@@ -1,0 +1,79 @@
+8
+SubChecker
+import java.rmi.Remote;
+import java.rmi.RemoteException;
+
+public interface SubChecker extends Remote {
+    String isSubstring(String str1, String str2) throws RemoteException;
+}
+
+SubCheckerClient
+import java.rmi.Naming;
+
+public class SubCheckerClient {
+    public static void main(String[] args) {
+        try {
+            SubChecker stub = (SubChecker) Naming.lookup("rmi://localhost:1099/SubCheckerService");
+
+            String str1 = "Hello";
+            String str2 = "Hello, World!";
+            System.out.println("Result: " + stub.isSubstring(str1, str2));
+
+            str1 = "Java";
+            str2 = "Programming in Java";
+            System.out.println("Result: " + stub.isSubstring(str1, str2));
+
+            str1 = "Python";
+            str2 = "Java Programming";
+            System.out.println("Result: " + stub.isSubstring(str1, str2));
+
+        } catch (Exception e) {
+            System.out.println("Client exception: " + e.toString());
+            e.printStackTrace();
+        }
+    }
+}
+
+SubCheckerImpl
+import java.rmi.RemoteException;
+import java.rmi.server.UnicastRemoteObject;
+
+public class SubCheckerImpl extends UnicastRemoteObject implements SubChecker {
+    protected SubCheckerImpl() throws RemoteException {
+        super();
+    }
+
+    @Override
+    public String isSubstring(String str1, String str2) throws RemoteException {
+        if (str2.contains(str1)) {
+            return "Yes, \"" + str1 + "\" is a substring of \"" + str2 + "\".";
+        } else {
+            return "No, \"" + str1 + "\" is not a substring of \"" + str2 + "\".";
+        }
+    }
+}
+
+SubCheckerServer
+import java.rmi.Naming;
+import java.rmi.registry.LocateRegistry;
+
+public class SubCheckerServer {
+    public static void main(String[] args) {
+        try {
+            LocateRegistry.createRegistry(1099);
+            SubCheckerImpl obj = new SubCheckerImpl();
+            Naming.rebind("rmi://localhost:1099/SubCheckerService", obj);
+            System.out.println("Server ready.");
+        } catch (Exception e) {
+            System.out.println("Server exception: " + e.toString());
+            e.printStackTrace();
+        }
+    }
+}
+-----------------------------------------------------------------------------------------
+Try running this
+1. **Save the Java code** into four files: `SubChecker.java`, `SubCheckerClient.java`, `SubCheckerImpl.java`, and `SubCheckerServer.java`.
+2. **Compile the code** using: `javac SubChecker.java SubCheckerClient.java SubCheckerImpl.java SubCheckerServer.java`.
+3. **Start the RMI registry**: Run `rmiregistry &` in a new terminal.
+4. **Run the server**: Execute `java SubCheckerServer` in a new terminal.
+5. **Run the client**: Execute `java SubCheckerClient` to check if one string is a substring of another.
