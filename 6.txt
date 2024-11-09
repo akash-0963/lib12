@@ -1,0 +1,126 @@
+CORBA
+
+
+Step 1 : Create a file named Greeting.idl to define the CORBA interface for the "Greeting" service:
+
+module GreetingApp {
+    interface Greeting {
+        string sayHello();
+    };
+};
+
+Step 2 :Compile the IDL File
+idlj -fall Greeting.idl
+
+
+Step 3: Implement the Server
+Create the server implementation file GreetingServer.java, where you will implement the sayHello method.
+
+import GreetingApp.GreetingPOA;
+import org.omg.CORBA.ORB;
+
+public class GreetingServer extends GreetingPOA {
+    private ORB orb;
+
+    public void setORB(ORB orb_val) {
+        orb = orb_val;
+    }
+
+    // Implement the sayHello() method
+    public String sayHello() {
+        return "Hello from the CORBA Server!";
+    }
+
+    public void shutdown() {
+        orb.shutdown(false);
+    }
+}
+Step 4: Implement the Server Setup
+Create the main server file, GreetingServerMain.java, to register the GreetingServer object with the ORB.
+
+
+import GreetingApp.Greeting;
+import GreetingApp.GreetingHelper;
+import org.omg.CORBA.ORB;
+import org.omg.PortableServer.POA;
+import org.omg.PortableServer.POAHelper;
+
+public class GreetingServerMain {
+    public static void main(String[] args) {
+        try {
+            // Initialize the ORB
+            ORB orb = ORB.init(args, null);
+
+            // Get reference to root POA and activate the POA manager
+            POA rootpoa = POAHelper.narrow(orb.resolve_initial_references("RootPOA"));
+            rootpoa.the_POAManager().activate();
+
+            // Create the GreetingServer object and register it with the ORB
+            GreetingServer greetingServer = new GreetingServer();
+            greetingServer.setORB(orb);
+
+            // Obtain a CORBA object reference
+            org.omg.CORBA.Object ref = rootpoa.servant_to_reference(greetingServer);
+            Greeting href = GreetingHelper.narrow(ref);
+
+            // Bind the object reference in the naming context
+            org.omg.CORBA.Object objRef = orb.resolve_initial_references("NameService");
+            NamingContextExt ncRef = NamingContextExtHelper.narrow(objRef);
+            NameComponent path[] = ncRef.to_name("GreetingService");
+            ncRef.rebind(path, href);
+
+            System.out.println("GreetingServer is ready and waiting for requests...");
+
+            // Wait for incoming requests
+            orb.run();
+        } catch (Exception e) {
+            System.err.println("Error: " + e);
+            e.printStackTrace(System.out);
+        }
+        System.out.println("GreetingServer shutting down.");
+    }
+}
+Step 5: Implement the Client
+Create the client file GreetingClient.java, which will access the GreetingService and call the sayHello method.
+
+import GreetingApp.Greeting;
+import GreetingApp.GreetingHelper;
+import org.omg.CORBA.ORB;
+import org.omg.CosNaming.NamingContextExt;
+import org.omg.CosNaming.NamingContextExtHelper;
+
+public class GreetingClient {
+    public static void main(String[] args) {
+        try {
+            // Initialize the ORB
+            ORB orb = ORB.init(args, null);
+
+            // Get reference to the Naming Service
+            org.omg.CORBA.Object objRef = orb.resolve_initial_references("NameService");
+            NamingContextExt ncRef = NamingContextExtHelper.narrow(objRef);
+
+            // Resolve the GreetingService object reference in the naming context
+            Greeting greetingRef = GreetingHelper.narrow(ncRef.resolve_str("GreetingService"));
+
+            // Call the sayHello method and print the result
+            String response = greetingRef.sayHello();
+            System.out.println("Response from server: " + response);
+        } catch (Exception e) {
+            System.err.println("Error: " + e);
+            e.printStackTrace(System.out);
+        }
+    }
+}
+Step 6: Run the ORB Daemon, Server, and Client
+1. Start the CORBA Name Service (if it's not already running):
+tnameserv -ORBInitialPort 1050 &
+
+2. Run the Server
+java -ORBInitialPort 1050 GreetingServerMain
+
+3. Run the Client
+java -ORBInitialPort 1050 GreetingClient
+
+Expected Output
+When the client runs, it should display:
+Response from server: Hello from the CORBA Server!
