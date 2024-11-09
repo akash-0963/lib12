@@ -1,0 +1,81 @@
+9) RMI String Reverse
+
+import java.rmi.Remote;
+import java.rmi.RemoteException;
+
+public interface ReverseCheckService extends Remote {
+    // Remote method to check if str1 is the reverse of str2
+    String checkReverse(String str1, String str2) throws RemoteException;
+}
+
+import java.rmi.RemoteException;
+import java.rmi.server.UnicastRemoteObject;
+import java.rmi.registry.LocateRegistry;
+import java.rmi.registry.Registry;
+
+public class ReverseCheckServer extends UnicastRemoteObject implements ReverseCheckService {
+
+    // Constructor
+    public ReverseCheckServer() throws RemoteException {
+        super();
+    }
+
+    // Implementation of the remote method
+    @Override
+    public String checkReverse(String str1, String str2) throws RemoteException {
+        // Check if str1 is the reverse of str2
+        StringBuilder reversedStr2 = new StringBuilder(str2).reverse();
+        if (str1.equals(reversedStr2.toString())) {
+            return "\"" + str1 + "\" is the reverse of \"" + str2 + "\"";
+        } else {
+            return "\"" + str1 + "\" is NOT the reverse of \"" + str2 + "\"";
+        }
+    }
+
+    public static void main(String[] args) {
+        try {
+            // Create an instance of ReverseCheckServer
+            ReverseCheckServer server = new ReverseCheckServer();
+
+            // Bind the remote object to the RMI registry
+            Registry registry = LocateRegistry.createRegistry(1099); // Default RMI port
+            registry.rebind("ReverseCheckService", server);
+
+            System.out.println("ReverseCheckServer is running and waiting for client requests...");
+        } catch (RemoteException e) {
+            e.printStackTrace();
+        }
+    }
+}
+
+
+import java.rmi.registry.LocateRegistry;
+import java.rmi.registry.Registry;
+
+public class ReverseCheckClient {
+    public static void main(String[] args) {
+        try {
+            // Connect to the RMI registry on localhost
+            Registry registry = LocateRegistry.getRegistry("localhost", 1099);
+
+            // Lookup the remote object in the registry
+            ReverseCheckService service = (ReverseCheckService) registry.lookup("ReverseCheckService");
+
+            // Define the two strings to check
+            String str1 = "dcba";
+            String str2 = "abcd";
+
+            // Call the remote method and print the result
+            String result = service.checkReverse(str1, str2);
+            System.out.println("Result from server: " + result);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}
+
+
+Compile all
+rmiregistry &
+java ReverseCheckServer
+java ReverseCheckClient
