@@ -1,0 +1,85 @@
+7 another
+7) RMI String concatenate
+
+import java.rmi.Remote;
+import java.rmi.RemoteException;
+
+public interface ConcatService extends Remote {
+    // Remote method for concatenating two strings
+    String concatenate(String str1, String str2) throws RemoteException;
+}
+
+
+import java.rmi.RemoteException;
+import java.rmi.server.UnicastRemoteObject;
+import java.rmi.registry.LocateRegistry;
+import java.rmi.registry.Registry;
+
+public class ConcatServer extends UnicastRemoteObject implements ConcatService {
+
+    // Constructor
+    public ConcatServer() throws RemoteException {
+        super();
+    }
+
+    // Implementation of the remote method
+    @Override
+    public String concatenate(String str1, String str2) throws RemoteException {
+        return str1 + str2;
+    }
+
+    public static void main(String[] args) {
+        try {
+            // Create an instance of ConcatServer
+            ConcatServer server = new ConcatServer();
+
+            // Bind the remote object to the RMI registry
+            Registry registry = LocateRegistry.createRegistry(1099); // Default RMI port
+            registry.rebind("ConcatService", server);
+
+            System.out.println("ConcatServer is running and waiting for client requests...");
+        } catch (RemoteException e) {
+            e.printStackTrace();
+        }
+    }
+}
+
+import java.rmi.registry.LocateRegistry;
+import java.rmi.registry.Registry;
+
+public class ConcatClient {
+    public static void main(String[] args) {
+        try {
+            // Connect to the RMI registry on localhost
+            Registry registry = LocateRegistry.getRegistry("localhost", 1099);
+
+            // Lookup the remote object in the registry
+            ConcatService service = (ConcatService) registry.lookup("ConcatService");
+
+            // Define the two strings to concatenate
+            String str1 = "Hello, ";
+            String str2 = "world!";
+
+            // Call the remote method and print the result
+            String result = service.concatenate(str1, str2);
+            System.out.println("Concatenated result from server: " + result);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}
+
+
+steps:
+javac ConcatService.java ConcatServer.java ConcatClient.java
+
+rmiregistry &
+
+java ConcatServer
+ConcatServer is running and waiting for client requests...
+
+java ConcatClient
+Concatenated result from server: Hello, world!
+
+
+
