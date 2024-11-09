@@ -1,0 +1,25 @@
+1. openMP API
+#include <omp.h>
+#include <stdio.h>
+int main(int argc, char *argv[])
+{
+#pragma omp parallel
+{
+        printf("Hello World! I'm thread %d out of %d threads.\n",omp_get_thread_num(), omp_get_num_threads());
+}
+return 0;
+}
+
+
+
+gcc -fopenmp 1.c -o 1
+./1
+
+or 
+
+gcc -fopenmp 1.c -o 1
+export OMP_NUM_THREADS=4
+./1
+
+
+
